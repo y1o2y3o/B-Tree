@@ -347,9 +347,13 @@ public class BPlusTree<K extends Comparable<K>> {
         int index;
         while (!p.isLeaf()) {
             index = indexOf(p, key);
+            if(index == -1)
+                return null; // 查找失败
             p = (TreeNode) p.ptrs[index];
         }
         index = indexOf(p, key);
+        if(index == -1)
+            return null; // 查找失败
         if (key.compareTo((K) p.keys[index]) == 0) {
             return p.ptrs[index];
         }
