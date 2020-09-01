@@ -42,17 +42,27 @@ public class BTree<K extends Comparable<K>> {
         while (p != null) {
             for (int i = 0; i < p.size; ++i) {
                 K k = (K) p.keys[i];
-                System.out.print(k+" ");
-                if(last != null && last.compareTo(k) > 0)
+                System.out.print(k + " ");
+                if (last != null && last.compareTo(k) > 0)
                     throw new Error("B树错误: 元素不是有序的！");
                 last = k;
             }
             p = p.next;
         }
     }
+
+    /**
+     * 插入B树中的某个key: 删除成功返回true
+     *
+     * @param key 关键字
+     */
+    public boolean delete(K key) {
+        MergeFlag flag = new MergeFlag();
+        return deleteAndAdjust(null, -1, root, key, flag);
+    }
     /*---------------------------------------------------------⬇️私有方法⬇️-----------------------------------------------*/
 
-    static class RBranchRef {
+    private static class RBranchRef {
         Object rbranch = null;
     }
 
@@ -73,10 +83,10 @@ public class BTree<K extends Comparable<K>> {
         // 向下递归插入
         if (!T.isleaf) {
             boolean insertFlag = insertAndAdjust(T, i, (BTNode) T.ptrs[i], key, value, ref);
-            if(!insertFlag) return false; // 数据已经存在, 不需要插入
+            if (!insertFlag) return false; // 数据已经存在, 不需要插入
         } else {
             // 卫星数据已存在, 更新
-            if(T.size > 0 && key.compareTo((K)(T.keys[i])) == 0) {
+            if (T.size > 0 && key.compareTo((K) (T.keys[i])) == 0) {
                 T.ptrs[i] = value;
                 return false;
             }
@@ -233,5 +243,220 @@ public class BTree<K extends Comparable<K>> {
                 }
             }
         }
+    }
+
+    /**
+     * 合并标志类
+     */
+    private static class MergeFlag {
+        boolean left = false;
+        boolean right = false;
+    }
+
+    /**
+     * 简单删除
+     *
+     * @param T    当前树
+     * @param i    待删除key的下标
+     * @param flag 合并标志
+     */
+    private void delete(BTNode T, int i, MergeFlag flag) {
+        for (int j = i; j < T.size - 1; ++j) {
+            T.keys[j] = T.keys[j + 1];
+            T.ptrs[j] = T.ptrs[j + 1];
+        }
+        T.keys[T.size - 1] = T.ptrs[T.size - 1] = null;
+        T.size--;
+        flag.left = flag.right = false;
+    }
+
+    /**
+     * 删除并借走左兄弟一个元素
+     *
+     * @param parent 父亲
+     * @param pindex 父亲中当前结点的索引下标
+     * @param T      当前结点
+     * @param index  待删除的关键字下标
+     * @param flag   合并标志
+     */
+    private void deleteAndBorrowLeft(BTNode parent, int pindex, BTNode T, int index, MergeFlag flag) {
+        delete(T, index, flag);
+        BTNode lBrother = (BTNode) parent.ptrs[pindex - 1];
+        for (int j = T.size - 1; j >= 0; --j) {
+            T.keys[j + 1] = T.keys[j];
+            T.ptrs[j + 1] = T.ptrs[j];
+        }
+        int li = lBrother.size - 1;
+        T.keys[0] = lBrother.keys[li];
+        T.ptrs[0] = lBrother.ptrs[li];
+        T.size++;
+        lBrother.keys[li] = lBrother.ptrs[li] = null;
+        lBrother.size--;
+    }
+
+    /**
+     * 删除并借走右兄弟一个元素
+     *
+     * @param parent 父亲
+     * @param pindex 父亲中当前结点的索引下标
+     * @param T      当前结点
+     * @param index  待删除的关键字下标
+     * @param flag   合并标志
+     */
+    private void deleteAndBorrowRight(BTNode parent, int pindex, BTNode T, int index, MergeFlag flag) {
+        delete(T, index, flag);
+        BTNode rBrother = (BTNode) parent.ptrs[pindex + 1];
+        T.keys[T.size] = rBrother.keys[0];
+        T.ptrs[T.size] = rBrother.ptrs[0];
+        T.size++;
+        for (int j = 0; j < rBrother.size - 1; ++j) {
+            rBrother.keys[j] = rBrother.keys[j + 1];
+            rBrother.ptrs[j] = rBrother.ptrs[j + 1];
+        }
+
+        int ri = rBrother.size - 1;
+        rBrother.keys[ri] = rBrother.ptrs[ri] = null;
+        rBrother.size--;
+    }
+
+    /**
+     * 删除并合并至左兄弟
+     *
+     * @param parent 父亲
+     * @param pindex 父亲中当前结点的索引下标
+     * @param T      当前结点
+     * @param index  待删除的关键字下标
+     * @param flag   合并标志
+     */
+    private void deleteAndMergeToLeft(BTNode parent, int pindex, BTNode T, int index, MergeFlag flag) {
+        delete(T, index, flag);
+        BTNode lBrother = (BTNode) parent.ptrs[pindex - 1];
+        for (int i = lBrother.size, j = 0; j < T.size; ++j, ++i) {
+            lBrother.keys[i] = T.keys[j];
+            lBrother.ptrs[i] = T.ptrs[j];
+            T.keys[j] = T.ptrs[j] = null;
+        }
+        lBrother.size += T.size;
+        flag.left = true;
+    }
+
+    /**
+     * 删除并合并至右兄弟
+     *
+     * @param parent 父亲
+     * @param pindex 父亲中当前结点的索引下标
+     * @param T      当前结点
+     * @param index  待删除的关键字下标
+     * @param flag   合并标志
+     */
+    private void deleteAndMergeToRight(BTNode parent, int pindex, BTNode T, int index, MergeFlag flag) {
+        delete(T, index, flag);
+        BTNode rBrother = (BTNode) parent.ptrs[pindex + 1];
+        for (int j = rBrother.size - 1; j >= 0; --j) {
+            rBrother.keys[j + T.size] = rBrother.keys[j];
+            rBrother.ptrs[j + T.size] = rBrother.ptrs[j];
+        }
+        rBrother.size += T.size;
+        for (int j = 0; j < T.size; ++j) {
+            rBrother.keys[j] = T.keys[j];
+            rBrother.ptrs[j] = T.ptrs[j];
+            T.keys[j] = T.ptrs[j] = null;
+        }
+        flag.right = true;
+    }
+
+    /**
+     * 递归删除B树中的key和它所对应的值
+     *
+     * @param parent 当前结点父亲
+     * @param pindex 当前结点在父结点中的索引下标
+     * @param T      当前结点
+     * @param key    待删除关键字
+     * @param flag   合并标志
+     * @return 删除成功
+     */
+    private boolean deleteAndAdjust(BTNode parent, int pindex, BTNode T, K key, MergeFlag flag) {
+        int i = lowerBound(T, key);
+        if (i >= T.size) return false;
+
+        // 向下递归删除
+        if (!T.isleaf) {
+            boolean deleteFlag = deleteAndAdjust(T, i, (BTNode) T.ptrs[i], key, flag);
+            if (!deleteFlag) return false; // 数据不存在, 删除失败
+        } else {
+            // 待删除的卫星数据不存在,删除失败
+            if (key.compareTo((K) (T.keys[i])) != 0) {
+                return false;
+            }
+        }
+
+        // 向上调整
+        // 删除
+        if (T.isleaf || flag.left || flag.right) {
+            int low = (int) Math.ceil((double) m / 2.0);
+            // 直接删除
+            if (T == root || T.size > low) {
+                delete(T, i, flag);
+            } else {
+                // 下溢
+                int psize = parent.size;
+                boolean borrowed = false;
+                BTNode lBrother = null, rBrother = null;
+
+                // 向兄弟借key
+                if (pindex > 0) { // 尝试借左兄弟
+                    lBrother = (BTNode) parent.ptrs[pindex - 1];
+                    if (lBrother.size > low) {
+                        deleteAndBorrowLeft(parent, pindex, T, i, flag);
+                        borrowed = true;
+                        // 调整父结点
+                        parent.keys[pindex - 1] = lBrother.getMaxKey();
+                    }
+                } else if (pindex < psize - 1) { // 尝试借右兄弟
+                    rBrother = (BTNode) parent.ptrs[pindex + 1];
+                    if (rBrother.size > low) {
+                        deleteAndBorrowRight(parent, pindex, T, i, flag);
+                        borrowed = true;
+                        // 调整父结点
+                        parent.keys[pindex] = T.getMaxKey();
+                    }
+
+                }
+                // 借兄弟不成,则合并至兄弟
+                if (!borrowed) {
+                    if (lBrother != null) {
+                        deleteAndMergeToLeft(parent, pindex, T, i, flag);
+                        // 调整父结点
+                        parent.keys[pindex - 1] = lBrother.getMaxKey();
+                        // 调整叶子链表
+                        if(T.isleaf){
+                            lBrother.next = T.next;
+                            if(T.next != null) T.next.prev = lBrother;
+                            T.next = T.prev = null;
+                        }
+                    } else if (rBrother != null) {
+                        deleteAndMergeToRight(parent, pindex, T, i, flag);
+                        // 调整父结点
+                        //parent.keys[pindex + 1] = rBrother.getMaxKey();
+                        // 调整叶子链表
+                        if(T.isleaf){
+                            rBrother.prev = T.prev;
+                            if(T.prev != null) T.prev.next = rBrother;
+                            else sqt = rBrother;
+                            T.next = T.prev = null;
+                        }
+                    }
+                }
+            }
+
+        }
+
+        // 如果根处下溢
+        if (T == root && !T.isleaf && T.size <= 1) {
+            // 根结点降低一层
+            root = (BTNode) T.ptrs[0];
+            T.keys[0] = T.ptrs[0] = null;
+        }
+        return true;
     }
 }

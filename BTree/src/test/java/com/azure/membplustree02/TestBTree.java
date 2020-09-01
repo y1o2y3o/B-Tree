@@ -10,19 +10,22 @@ public class TestBTree {
     @Test
     public void test(){
         BTree<Integer> bt = new BTree<>(3);
-        Integer[] arr = new Integer[10];
+        Integer[] arr =new Integer[100];
         for(int i = 0; i < arr.length; ++i){
             arr[i] = i;
         }
+
+
+        for(int i = 0; i < arr.length; ++i){
+            bt.insert(arr[i],"null");
+        }
         shuffle(arr);
-        System.out.println(Arrays.toString(arr));
-        for(int i = 0; i < arr.length; ++i){
-            bt.insert(arr[i],"null");
+
+ //       System.out.println(Arrays.toString(arr));
+        for(int i = 0; i < 100; ++i){
+            bt.delete(arr[i]);
         }
-        for(int i = 0; i < arr.length; ++i){
-            bt.insert(arr[i],"null");
-        }
-        //bt.print();
+        bt.print();
         bt.printKeysInorder();
     }
 
