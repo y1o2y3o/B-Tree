@@ -1,7 +1,5 @@
 package com.azure.membplustree02;
 
-import com.azure.membplustree01.TreeNode;
-
 @SuppressWarnings("unchecked")
 public class BTree<K extends Comparable<K>> {
     private int m; // m阶B树
@@ -62,6 +60,9 @@ public class BTree<K extends Comparable<K>> {
     }
     /*---------------------------------------------------------⬇️私有方法⬇️-----------------------------------------------*/
 
+    /**
+     * 分支引用类,用来传递待插入的分支引用(作用相当于C++里的引用)
+     */
     private static class RBranchRef {
         Object rbranch = null;
     }
@@ -448,7 +449,6 @@ public class BTree<K extends Comparable<K>> {
                     }
                 }
             }
-
         }
 
         // 如果根处下溢
