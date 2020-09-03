@@ -10,20 +10,24 @@ public class BTTest {
     public void test(){
         FileMapper mapper = new FileMapper.FileMapperFactory()
                 .setPageSize(4 * FileMapper._1KB)
-                .load();
+                .create();
         BTree tree = new BTree(mapper);
         System.out.println(mapper.root);
         System.out.println(mapper.usedPages);
 
-
-//        for(int i = 0; i < arr.length; ++i){
-//            tree.insert(arr[i], 11);
-//        }
+        long[] arr = new long[100000];
+        for(int i = 0; i < arr.length; ++i){
+            arr[i] = i;
+            tree.insert(arr[i], i);
+        }
+        for(int i = 99; i < arr.length; ++i){
+            tree.delete(arr[i]);
+        }
+        tree.flush();
        // tree.search(10);
-        ArrayList<Long> longs = tree.searchRange(999900, 1010102);
+        ArrayList<Long> longs = tree.searchRange(0, 1010102);
        System.out.println(longs);
        // tree.printKeysInorder();
-
     }
 
     public static void shuffle(long[] nums) {
