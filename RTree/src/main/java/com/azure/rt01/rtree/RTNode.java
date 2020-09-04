@@ -13,7 +13,7 @@ public class RTNode {
     long next; // 下一个叶子结点 8B
     long prev; // 上一个叶子结点 8B
     boolean isleaf; // 4B
-    Box[] keys; // 关键字数组
+    Rectangle[] keys; // 关键字数组
     long[] ptrs; // 指向子树(数据)的指针数组
     boolean change = true; // 是否更改过
     boolean delete = false; // 删除标记
@@ -22,11 +22,26 @@ public class RTNode {
         this.m = m;
         nextFree = -1L;
         pageIndex = 0L;
-        keys = new Box[m + 1];
+        keys = new Rectangle[m + 1];
         ptrs = new long[m + 1];
         size = 0;
         prev = next = -1L;
         isleaf = true;
+    }
+
+    public void print() {
+        System.out.println("Print rtnode " + pageIndex);
+        System.out.println("\tm: " + m);
+        System.out.println("\tnextFree: " + nextFree);
+        System.out.println("\tpageIndex: " + pageIndex);
+        System.out.println("\tsize: " + size);
+        System.out.println("\tnext: " + next);
+        System.out.println("\tprev: " + prev);
+        System.out.println("\tisleaf: " + isleaf);
+        for (int i = 0; i < size; ++i) {
+            System.out.print("[" + keys[i].toString() + "," + ptrs[i] + "] ");
+        }
+        System.out.println();
     }
 
     @Override
@@ -36,9 +51,10 @@ public class RTNode {
     }
 
     static int getM(int pageSize) {
-        return ((pageSize - RTNode.pageHeaderCapacity) / (Box.CAPACITY + 8));
+        return ((pageSize - RTNode.pageHeaderCapacity) / (Rectangle.CAPACITY + 8));
     }
 
+    // 写page
     public byte[] toPageBytes(int pageSize) {
         byte[] bytes = new byte[pageSize];
         int offset = 0;
@@ -55,7 +71,7 @@ public class RTNode {
         ByteUtil.int2Bytes((isleaf ? 1 : 0), bytes, offset);
         offset += 4;
         for (int i = 0; i < size; ++i) {
-            Box b = keys[i];
+            Rectangle b = keys[i];
             ByteUtil.double2Bytes(b.p1.x, bytes, offset);
             offset += 8;
             ByteUtil.double2Bytes(b.p1.y, bytes, offset);
@@ -70,6 +86,7 @@ public class RTNode {
         return bytes;
     }
 
+    // 读page
     public static RTNode fromPageBytes(byte[] bytes) {
         RTNode rt = new RTNode(RTNode.getM(bytes.length));
         int offset = 0;
@@ -86,7 +103,7 @@ public class RTNode {
         rt.isleaf = (ByteUtil.bytes2Int(bytes, offset) != 0);
         offset += 4;
         for (int i = 0; i < rt.size; ++i) {
-            rt.keys[i] = new Box(ByteUtil.bytes2Double(bytes, offset)
+            rt.keys[i] = new Rectangle(ByteUtil.bytes2Double(bytes, offset)
                     , ByteUtil.bytes2Double(bytes, offset + 8)
                     , ByteUtil.bytes2Double(bytes, offset + 16)
                     , ByteUtil.bytes2Double(bytes, offset + 24));
@@ -97,4 +114,39 @@ public class RTNode {
         return rt;
     }
 
+    // 在末尾增加一个entry
+    void addEntry(Rectangle key, long value) {
+        keys[size] = key;
+        ptrs[size] = value;
+        size++;
+    }
+
+    // 寻找插入点
+    int getInsertPos(Rectangle key) {
+        double minIncr = Double.MAX_VALUE;
+        int index = -1;
+        for (int i = 0; i < size; ++i) {
+            double curIncr = Rectangle.incrArea(keys[i], key);
+            if (curIncr < minIncr) {
+                minIncr = curIncr;
+                index = i;
+            }
+        }
+        return index;
+    }
+
+    // 计算此结点mbr
+    Rectangle getMbr(){
+        double xmax, ymax, xmin, ymin;
+        xmax = ymax = Double.MIN_VALUE;
+        xmin = ymin = Double.MAX_VALUE;
+        for (int i = 0; i < size; ++i) {
+            Rectangle r = keys[i];
+            xmax = Double.max(xmax, r.p2.x);
+            ymax = Double.max(ymax, r.p2.y);
+            xmin = Double.min(xmin, r.p1.x);
+            ymin = Double.min(ymin, r.p1.x);
+        }
+        return new Rectangle(xmin, ymin, xmax, ymax);
+    }
 }

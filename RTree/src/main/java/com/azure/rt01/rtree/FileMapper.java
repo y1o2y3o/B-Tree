@@ -277,17 +277,12 @@ public class FileMapper {
 
     public static void main(String[] args) {
         FileMapper mapper = new FileMapperFactory().load();
-        mapper.allocatePage();
         RTNode btNode = mapper.readPage(mapper.root);
 //        btNode.isleaf = false;
+//        btNode.addEntry(new Rectangle(1, 2, 3,4),11);
+//        btNode.addEntry(new Rectangle(-1, -1, 3,4),11);
 //        mapper.writePage(btNode);
-        System.out.println("pageIndex:"+btNode.pageIndex);
-        System.out.println("size:"+btNode.size);
-        System.out.println("isleaf:"+btNode.isleaf);
-        System.out.println("prev:"+btNode.prev);
-        System.out.println("nextFree:"+btNode.nextFree);
-        System.out.println("next:"+btNode.next);
-
+        btNode.print();
 //        btNode.isleaf = true;
 //        mapper.writePage(btNode);
 //        RTNode btNode2 = mapper.readPage(mapper.root);
