@@ -31,35 +31,36 @@ public class BTree { //
 
     /**
      * 范围搜索
+     *
      * @param lb 左边界
      * @param rb 右边界
      * @return 数组
      */
-    public ArrayList<Long> searchRange(long lb, long rb){
+    public ArrayList<Long> searchRange(long lb, long rb) {
         ArrayList<Long> list = new ArrayList<>();
-        if(lb <= rb){
+        if (lb <= rb) {
             Result result = searchKey(lb);
             long p = result.pt.pageIndex;
             BTNode pbt = result.pt;
             int i = result.index;
             boolean end = false;
             while (p != NIL && !end) {
-                for(int j = i; j < pbt.size; ++j){
-                    if(pbt.keys[j] <= rb){
+                for (int j = i; j < pbt.size; ++j) {
+                    if (pbt.keys[j] <= rb) {
                         list.add(pbt.ptrs[j]);
-                    }
-                    else{
+                    } else {
                         end = true;
                         break;
                     }
                 }
                 i = 0;
                 p = pbt.next;
-                if(p != NIL) pbt = getBTNode(p);
+                if (p != NIL) pbt = getBTNode(p);
             }
         }
         return list;
     }
+
     /**
      * 在B树上查找关键字key,返回 Result(pt, index, tag)。若查找成功，则特征值tag 为 true, pt.keys[index] 等于 key；
      * 否则tag = false, 等于key的关键字应该插入在 pt.keys[index-1] 和 pt.keys[index]之间。
@@ -85,6 +86,7 @@ public class BTree { //
             return new Result(pbt, index, false);
         }
     }
+
     /**
      * 打印树结构
      */
@@ -338,7 +340,6 @@ public class BTree { //
         if (btMap.containsKey(pageIndex))
             mapper.writePage(btMap.get(pageIndex));
     }
-
 
 
     /**

@@ -43,7 +43,6 @@ public class BTNode {
     }
 
 
-
     static int getM(int pageSize) {
         return ((pageSize - BTNode.pageHeaderCapacity) >> 4);
     }

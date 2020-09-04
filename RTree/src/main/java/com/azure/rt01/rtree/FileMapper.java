@@ -1,6 +1,4 @@
-package com.azure.rtree;
-
-import com.sun.istack.internal.NotNull;
+package com.azure.rt01.rtree;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -141,7 +139,7 @@ public class FileMapper {
         }
     }
 
-    public void writePage(@NotNull RTNode bt) {
+    public void writePage(RTNode bt) {
         initFile();
         try {
             file.seek(getPagePosition(bt.pageIndex));

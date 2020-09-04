@@ -1,6 +1,6 @@
-package com.azure.convert;
+package com.azure.rt01.convert;
 
-import com.azure.rtree.Rectangle;
+import com.azure.rt01.rtree.Rectangle;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;

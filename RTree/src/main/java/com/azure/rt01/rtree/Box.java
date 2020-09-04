@@ -1,4 +1,4 @@
-package com.azure.rtree;
+package com.azure.rt01.rtree;
 
 public class Box extends Rectangle{
     public static int CAPACITY = 32;

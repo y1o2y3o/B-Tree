@@ -1,4 +1,4 @@
-package com.azure.rtree;
+package com.azure.rt01.rtree;
 
 public class Rectangle {
     public Point p1, p2;

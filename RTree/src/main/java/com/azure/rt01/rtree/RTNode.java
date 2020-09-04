@@ -1,6 +1,6 @@
-package com.azure.rtree;
+package com.azure.rt01.rtree;
 
-import com.azure.util.ByteUtil;
+import com.azure.rt01.util.ByteUtil;
 
 import java.util.Arrays;
 

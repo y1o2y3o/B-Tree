@@ -1,7 +1,5 @@
 package com.azure.disk.bptree01;
 
-import com.sun.istack.internal.NotNull;
-
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -42,8 +40,8 @@ public class FileMapper {
     }
 
     // 获取file
-    private void initFile(){
-        if(file == null){
+    private void initFile() {
+        if (file == null) {
             try {
                 file = new RandomAccessFile(fileName, "rw");
             } catch (FileNotFoundException e) {
@@ -53,7 +51,7 @@ public class FileMapper {
     }
 
     // 设置新的根结点
-    public void setNewRoot(long root){
+    public void setNewRoot(long root) {
         initFile();
         try {
             file.seek(posMap.get("root"));
@@ -63,6 +61,7 @@ public class FileMapper {
 
         }
     }
+
     private long getPagePosition(long pageIndex) {
         return pageIndex * pageSize + fileHeaderCapacity;
     }
@@ -154,7 +153,7 @@ public class FileMapper {
         }
     }
 
-    public void writePage(@NotNull BTNode bt) {
+    public void writePage(BTNode bt) {
         initFile();
         try {
             file.seek(getPagePosition(bt.pageIndex));

@@ -1,4 +1,4 @@
-package com.azure.rtree;
+package com.azure.rt01.rtree;
 
 
 public class Result {

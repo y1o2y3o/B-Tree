@@ -1,4 +1,4 @@
-package com.azure.util;
+package com.azure.rt01.util;
 
 public class ByteUtil {
     public static void double2Bytes(double data, byte[] bytes, int offset) {
