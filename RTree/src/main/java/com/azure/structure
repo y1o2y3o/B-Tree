@@ -1,0 +1,20 @@
+header          -- 64B
+    pageSize    -- 4B
+    keySize     -- 4B
+    ptrSize     -- 4B
+    capacity    -- 8B
+    usedPages   -- 8B
+    root        -- 8B
+    sqt         -- 8B
+    firstFree   -- 8B
+    冗余 -- 12B
+
+pages...        -- 1024B⬆️
+    nextFree    -- 8B
+    pageIndex   -- 8B
+    size        -- 4B
+    next        -- 8B
+    prev        -- 8B
+    isleaf      -- 4B
+    key...      -- 32B
+    ptr...      -- 8B
