@@ -6,21 +6,22 @@ public class Rectangle {
     static final int CAPACITY = 32;
 
     // p1 左下, p2 右上
-    Point p1, p2;
+    public Point p1, p2;
 
     // 注意: x1 < x2, y1 < y2
     public Rectangle(double x1, double y1, double x2, double y2) {
+        if(x1 > x2 || y1 > y2) throw new Error("矩形不合法！");
         this.p1 = new Point(x1, y1);
         this.p2 = new Point(x2, y2);
     }
 
     // 宽(x轴)
-    double getWidth() {
+    public double getWidth() {
         return p2.x - p1.x;
     }
 
     // 高(y轴)
-    double getHeight() {
+    public double getHeight() {
         return p2.y - p1.y;
     }
 
@@ -48,7 +49,7 @@ public class Rectangle {
             xmax = Double.max(xmax, r.p2.x);
             ymax = Double.max(ymax, r.p2.y);
             xmin = Double.min(xmin, r.p1.x);
-            ymin = Double.min(ymin, r.p1.x);
+            ymin = Double.min(ymin, r.p1.y);
         }
         return new Rectangle(xmin, ymin, xmax, ymax);
     }

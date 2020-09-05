@@ -149,7 +149,7 @@ public class FileMapper {
         }
     }
 
-    static class FileMapperFactory {
+    public static class FileMapperFactory {
         private int pageSize = 1024 * 4; // 1KB
         private int keySize = 32; // 8B
         private int ptrSize = 8; // 8B
@@ -158,7 +158,7 @@ public class FileMapper {
         private long root = 0L;
         private long sqt = 0L;
         private long firstFree = 1L;
-        private String fileName = "index01.bin";
+        private String fileName = "index/index01.bin";
 
         public FileMapper load() {
             FileMapper mapper = new FileMapper();

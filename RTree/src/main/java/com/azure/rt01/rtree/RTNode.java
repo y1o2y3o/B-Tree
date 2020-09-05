@@ -5,7 +5,7 @@ import com.azure.rt01.util.ByteUtil;
 import java.util.Arrays;
 
 public class RTNode {
-    static int pageHeaderCapacity = 48;
+    public static int pageHeaderCapacity = 40;
     final int m; // m阶B树
     long nextFree; // 8B
     long pageIndex; // 8B
@@ -145,7 +145,7 @@ public class RTNode {
             xmax = Double.max(xmax, r.p2.x);
             ymax = Double.max(ymax, r.p2.y);
             xmin = Double.min(xmin, r.p1.x);
-            ymin = Double.min(ymin, r.p1.x);
+            ymin = Double.min(ymin, r.p1.y);
         }
         return new Rectangle(xmin, ymin, xmax, ymax);
     }

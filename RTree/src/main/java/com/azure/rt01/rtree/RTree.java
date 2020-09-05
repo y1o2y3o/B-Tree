@@ -1,5 +1,7 @@
 package com.azure.rt01.rtree;
 
+import com.azure.rt01.visualization.Draw;
+
 import java.util.HashMap;
 
 public class RTree {
@@ -18,6 +20,41 @@ public class RTree {
         this.sqt = mapper.sqt;
     }
 
+    // 插入key 和 value 到树中
+    public boolean insert(Rectangle key, long value) {
+        RBranchRef ref = new RBranchRef();
+        return insertAndAdjust(null, -1, getRTNode(root), key, value, ref);
+    }
+
+    // flush缓存(btMap)
+    public void flush() {
+        long delCnt = 0, updCnt = 0;
+        for (RTNode bt : btMap.values()) {
+            if (bt.delete) {
+                mapper.recyclePage(bt.pageIndex);
+                delCnt++;
+            } else if (bt.change) {
+                mapper.writePage(bt);
+                updCnt++;
+            }
+        }
+        System.out.println("提交成功！");
+        System.out.println("\t写入：" + updCnt);
+        System.out.println("\t删除：" + delCnt);
+        btMap.clear();
+    }
+
+
+    public void draw() {
+        Draw.init();
+        draw(getRTNode(root), 0);
+        Draw.done();
+    }
+
+    // 打印树结构
+    public void printTree() {
+        print(getRTNode(root), 0);
+    }
     /*---------------------------------------------------------⬇️私有方法⬇️-----------------------------------------------*/
 
 
@@ -108,6 +145,8 @@ public class RTree {
         // 1.选则种子
         Rectangle seed1, seed2;
         seed1 = seed2 = T.keys[0];
+        long seed1Ptr, seed2Ptr;
+        seed1Ptr = seed2Ptr = T.ptrs[0];
         double maxIncr = Double.MIN_VALUE;
         for (int i = 0; i < T.size; ++i) {
             for (int j = i + 1; j < T.size; ++j) {
@@ -115,7 +154,9 @@ public class RTree {
                 if (curIncr > maxIncr) {
                     maxIncr = curIncr;
                     seed1 = T.keys[i];
+                    seed1Ptr = T.ptrs[i];
                     seed2 = T.keys[j];
+                    seed2Ptr = T.ptrs[j];
                 }
             }
         }
@@ -123,15 +164,31 @@ public class RTree {
         // 2. 按照种子split
         T.size = 0;
         double incr1, incr2;
+        boolean lFull, rFull;
+        lFull = rFull = false;
+        int low = (m / 2) + (m % 2);
         for (int i = 0; i < m + 1; ++i) {
-            incr1 = Rectangle.incrArea(T.keys[i], seed1);
-            incr2 = Rectangle.incrArea(T.keys[i], seed2);
-            if (incr1 < incr2) {
-                T.addEntry(T.keys[i], T.ptrs[i]);
-            } else {
-                rt.addEntry(T.keys[i], T.ptrs[i]);
+            if (T.keys[i] != seed1 && T.keys[i] != seed2) {
+                if (!lFull && !rFull) {
+                    incr1 = Rectangle.incrArea(T.keys[i], seed1);
+                    incr2 = Rectangle.incrArea(T.keys[i], seed2);
+                    if (incr1 < incr2) {
+                        T.addEntry(T.keys[i], T.ptrs[i]);
+                        if (T.size + 1 == low) lFull = true;
+                    } else {
+                        rt.addEntry(T.keys[i], T.ptrs[i]);
+                        if (rt.size + 1 == low) rFull = true;
+                    }
+                } else if (lFull) {
+                    rt.addEntry(T.keys[i], T.ptrs[i]);
+                } else {
+                    T.addEntry(T.keys[i], T.ptrs[i]);
+                }
             }
         }
+
+        T.addEntry(seed1, seed1Ptr);
+        rt.addEntry(seed2, seed2Ptr);
         rt.isleaf = T.isleaf;
         ref.rbranch = rt.pageIndex;
         ref.tmbr = T.getMbr();
@@ -156,5 +213,33 @@ public class RTree {
         newNode.pageIndex = mapper.allocatePage();
         btMap.put(newNode.pageIndex, newNode);
         return newNode;
+    }
+
+    // 递归打印树结构
+    private void print(RTNode T, int level) {
+        if (T != null) {
+            for (int i = 0; i < level; ++i) {
+                System.out.print("\t");
+            }
+            System.out.printf("%s\n", T);
+            if (!T.isleaf) {
+                for (int i = 0; i < T.size; ++i) {
+                    RTNode t = getRTNode(T.ptrs[i]);
+                    print(t, level + 1);
+                }
+            }
+        }
+    }
+
+    // 递归画出索引结构
+    private void draw(RTNode T, int level) {
+        for (int i = 0; i < T.size; ++i) {
+            Draw.drawRect(T.keys[i], level + 1);
+            if (!T.isleaf) {
+                RTNode t = getRTNode(T.ptrs[i]);
+                draw(t, level + 1);
+            }
+        }
+
     }
 }

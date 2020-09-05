@@ -1,7 +1,7 @@
 package com.azure.rt01.rtree;
 
 public class Point {
-    double x, y;
+    public double x, y;
 
     Point(double x, double y) {
         this.x = x;
