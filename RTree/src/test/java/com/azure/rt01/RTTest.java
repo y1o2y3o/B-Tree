@@ -45,12 +45,12 @@ public class RTTest {
     }
 
     @Test
-    public void test2(){
+    public void test2() {
         FileMapper mapper = new FileMapper.FileMapperFactory()
                 .load();
         RTree rTree = new RTree(mapper);
         rTree.printTree();
-
+        rTree.draw();
     }
 
     @Test
@@ -58,13 +58,15 @@ public class RTTest {
         FileMapper mapper = new FileMapper.FileMapperFactory()
                 .load();
         RTree rTree = new RTree(mapper);
-        List<SearchResult> searchResults = rTree.searchRange(new Rectangle(0, 0, 100, 100));
+        List<SearchResult> searchResults = rTree.searchRange(new Rectangle(0, 0, 5000, 5000));
         System.out.println(searchResults.size());
         System.out.println(searchResults);
+        for (SearchResult searchResult : searchResults) System.out.println(rTree.delete(searchResult.key));
+        rTree.flush();
     }
 
     @Test
-    public void test4() throws Exception{
+    public void test4() throws Exception {
         Draw.init();
         BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(new File("input/data_00001"))));
         String line;

@@ -5,7 +5,7 @@ import com.azure.rt01.util.ByteUtil;
 import java.util.Arrays;
 
 public class RTNode {
-    public static int pageHeaderCapacity = 40;
+    public static int pageHeaderCapacity = 44;
     final int m; // m阶B树
     long nextFree; // 8B
     long pageIndex; // 8B
@@ -13,6 +13,7 @@ public class RTNode {
     long next; // 下一个叶子结点 8B
     long prev; // 上一个叶子结点 8B
     boolean isleaf; // 4B
+    int height; // 4B
     Rectangle[] keys; // 关键字数组
     long[] ptrs; // 指向子树(数据)的指针数组
     boolean change = true; // 是否更改过
@@ -27,6 +28,7 @@ public class RTNode {
         size = 0;
         prev = next = -1L;
         isleaf = true;
+        height = 0;
     }
 
     public void print() {
@@ -46,8 +48,7 @@ public class RTNode {
 
     @Override
     public String toString() {
-
-        return String.format("Node_%s: %d%s", hashCode(), size, Arrays.toString(keys));
+        return String.format("Node_%s: %d|%d%s", hashCode(), size, height, Arrays.toString(keys));
     }
 
     static int getM(int pageSize) {
@@ -69,6 +70,8 @@ public class RTNode {
         ByteUtil.long2Bytes(prev, bytes, offset);
         offset += 8;
         ByteUtil.int2Bytes((isleaf ? 1 : 0), bytes, offset);
+        offset += 4;
+        ByteUtil.int2Bytes(height, bytes, offset);
         offset += 4;
         for (int i = 0; i < size; ++i) {
             Rectangle b = keys[i];
@@ -101,6 +104,8 @@ public class RTNode {
         rt.prev = ByteUtil.bytes2Long(bytes, offset);
         offset += 8;
         rt.isleaf = (ByteUtil.bytes2Int(bytes, offset) != 0);
+        offset += 4;
+        rt.height = ByteUtil.bytes2Int(bytes, offset);
         offset += 4;
         for (int i = 0; i < rt.size; ++i) {
             rt.keys[i] = new Rectangle(ByteUtil.bytes2Double(bytes, offset)
@@ -136,7 +141,7 @@ public class RTNode {
     }
 
     // 计算此结点mbr
-    Rectangle getMbr(){
+    Rectangle getMbr() {
         double xmax, ymax, xmin, ymin;
         xmax = ymax = Double.MIN_VALUE;
         xmin = ymin = Double.MAX_VALUE;
@@ -148,5 +153,24 @@ public class RTNode {
             ymin = Double.min(ymin, r.p1.y);
         }
         return new Rectangle(xmin, ymin, xmax, ymax);
+    }
+
+    // 查找key的位置
+    int indexOfKey(Rectangle key) {
+        for (int i = 0; i < size; ++i) {
+            if (key.equals(keys[i])) return i;
+        }
+        return -1;
+    }
+
+    // 删除index位置的entry
+    void delete(int index) {
+        if(index < size && index >= 0){
+            for (int i = index; i < size - 1; ++i) {
+                keys[i] = keys[i + 1];
+                ptrs[i] = ptrs[i + 1];
+            }
+            size--;
+        }
     }
 }

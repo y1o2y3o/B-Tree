@@ -74,6 +74,11 @@ public class Rectangle {
         return false;
     }
 
+    // clone
+    public Rectangle cloneRect(){
+        return new Rectangle(p1.x, p1.y, p2.x, p2.y);
+    }
+
     public static void main(String[] args) {
         Rectangle r1 = new Rectangle(0, 0, 2, 2);
         Rectangle r2 = new Rectangle(1, 1, 3, 3);

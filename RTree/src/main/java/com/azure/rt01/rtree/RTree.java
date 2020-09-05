@@ -1,10 +1,12 @@
 package com.azure.rt01.rtree;
 
 import com.azure.rt01.visualization.Draw;
+import sun.security.krb5.internal.PAData;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Stack;
 
 public class RTree {
     public static final long NIL = -1L;
@@ -20,6 +22,32 @@ public class RTree {
         this.m = mapper.m;
         this.root = mapper.root;
         this.sqt = mapper.sqt;
+    }
+
+    // 删除
+    public boolean delete(Rectangle key) {
+        Stack<PathNode> path = new Stack<>();
+        if (!searchKey(getRTNode(root), key, path)) return false;
+        // 删除entry
+        RTNode leaf = path.peek().T;
+        int index = path.peek().index;
+        leaf.delete(index);
+        leaf.change = true;
+        // 向上调整
+        List<Entry> Q = new ArrayList<>();
+        adjust(path, Q);
+        // reinsert
+        for (Entry e : Q) {
+            reinsert(e.key, e.value, e.height);
+        }
+        // 判断root是否下溢
+        RTNode rtNode = getRTNode(root);
+        if (!rtNode.isleaf && rtNode.size <= 1) {
+            rtNode.delete = true;
+            root = rtNode.ptrs[0];
+            mapper.setNewRoot(root);
+        }
+        return true;
     }
 
     // 插入key 和 value 到树中
@@ -54,7 +82,7 @@ public class RTree {
     }
 
     // 范围查找
-    public List<SearchResult> searchRange(Rectangle range){
+    public List<SearchResult> searchRange(Rectangle range) {
         ArrayList<SearchResult> results = new ArrayList<>();
         searchRange(getRTNode(root), range, results);
         return results;
@@ -127,6 +155,7 @@ public class RTree {
                 rbt.keys[1] = ref.rmbr;
                 rbt.ptrs[0] = T.pageIndex;
                 rbt.ptrs[1] = ref.rbranch;
+                rbt.height = T.height + 1;
                 root = rbt.pageIndex;
                 mapper.setNewRoot(root); // 设置新的根结点索引
             }
@@ -174,18 +203,37 @@ public class RTree {
         T.size = 0;
         double incr1, incr2;
         boolean lFull, rFull;
+        Rectangle mbr1 = seed1.cloneRect(), mbr2 = seed2.cloneRect();
         lFull = rFull = false;
         int low = (m / 2) + (m % 2);
         for (int i = 0; i < m + 1; ++i) {
             if (T.keys[i] != seed1 && T.keys[i] != seed2) {
                 if (!lFull && !rFull) {
-                    incr1 = Rectangle.incrArea(T.keys[i], seed1);
-                    incr2 = Rectangle.incrArea(T.keys[i], seed2);
+                    incr1 = Rectangle.incrArea(T.keys[i], mbr1);
+                    incr2 = Rectangle.incrArea(T.keys[i], mbr2);
                     if (incr1 < incr2) {
                         T.addEntry(T.keys[i], T.ptrs[i]);
+                        mbr1 = Rectangle.mbr(mbr1, T.keys[i]);
+                        if (T.size + 1 == low) lFull = true;
+                    } else if (incr1 > incr2) {
+                        rt.addEntry(T.keys[i], T.ptrs[i]);
+                        mbr2 = Rectangle.mbr(mbr2, T.keys[i]);
+                        if (rt.size + 1 == low) rFull = true;
+                    } else if (mbr1.area() < mbr2.area()) {
+                        T.addEntry(T.keys[i], T.ptrs[i]);
+                        mbr1 = Rectangle.mbr(mbr1, T.keys[i]);
+                        if (T.size + 1 == low) lFull = true;
+                    } else if (mbr1.area() > mbr2.area()) {
+                        rt.addEntry(T.keys[i], T.ptrs[i]);
+                        mbr2 = Rectangle.mbr(mbr2, T.keys[i]);
+                        if (rt.size + 1 == low) rFull = true;
+                    } else if (T.size < rt.size) {
+                        T.addEntry(T.keys[i], T.ptrs[i]);
+                        mbr1 = Rectangle.mbr(mbr1, T.keys[i]);
                         if (T.size + 1 == low) lFull = true;
                     } else {
                         rt.addEntry(T.keys[i], T.ptrs[i]);
+                        mbr2 = Rectangle.mbr(mbr2, T.keys[i]);
                         if (rt.size + 1 == low) rFull = true;
                     }
                 } else if (lFull) {
@@ -199,6 +247,7 @@ public class RTree {
         T.addEntry(seed1, seed1Ptr);
         rt.addEntry(seed2, seed2Ptr);
         rt.isleaf = T.isleaf;
+        rt.height = T.height;
         ref.rbranch = rt.pageIndex;
         ref.tmbr = T.getMbr();
         ref.rmbr = rt.getMbr();
@@ -252,16 +301,150 @@ public class RTree {
     }
 
     // 范围查找（递归）
-    private void searchRange(RTNode T, Rectangle range, List<SearchResult> result){
-        if(T.isleaf){
-            for(int i = 0; i < T.size; ++i){
-                if(T.keys[i].overlap(range)) result.add(new SearchResult(T.keys[i], T.ptrs[i]));
-            }
+    private void searchRange(RTNode T, Rectangle range, List<SearchResult> result) {
+        if (T.isleaf) {
+            for (int i = 0; i < T.size; ++i)
+                if (T.keys[i].overlap(range)) result.add(new SearchResult(T.keys[i], T.ptrs[i]));
         } else {
-            for(int i = 0; i < T.size; ++i){
-                if(T.keys[i].overlap(range)) searchRange(getRTNode(T.ptrs[i]), range, result);
+            for (int i = 0; i < T.size; ++i)
+                if (T.keys[i].overlap(range)) searchRange(getRTNode(T.ptrs[i]), range, result);
+        }
+    }
+
+
+    // 路径结点,用于路径保存
+    static class PathNode {
+        RTNode T;
+        int index;
+
+        public PathNode(RTNode t, int index) {
+            this.index = index;
+            T = t;
+        }
+    }
+
+    // 路径结点,用于重插入
+    static class Entry {
+        Rectangle key;
+        long value;
+        int height; // 所在的结点高度
+
+        public Entry(Rectangle key, long value, int height) {
+            this.key = key;
+            this.value = value;
+            this.height = height;
+        }
+    }
+
+    // 删除后自下向上调整结点
+    private void adjust(Stack<PathNode> path, List<Entry> Q) {
+        int low = (m / 2) + (m % 2);
+        while (!path.empty()) {
+            RTNode curNode = path.pop().T;
+            if(curNode.pageIndex != root){
+                if (curNode.size < low) {
+                    for (int i = 0; i < curNode.size; ++i) {
+                        Q.add(new Entry(curNode.keys[i], curNode.ptrs[i], curNode.height));
+                    }
+                    curNode.delete = true;
+                    if (!path.empty()) {
+                        RTNode father = path.peek().T;
+                        int pindex = path.peek().index;
+                        father.delete(pindex);
+                        father.change = true;
+                    }
+                } else {
+                    if (!path.empty()) {
+                        RTNode father = path.peek().T;
+                        int pindex = path.peek().index;
+                        father.keys[pindex] = curNode.getMbr();
+                        father.change = true;
+                    }
+                }
+            }
+        }
+    }
+
+    // 查找叶子中是否存在key, 返回path以及key在叶子中的index
+    private boolean searchKey(RTNode T, Rectangle key, Stack<PathNode> path) {
+        if (T.isleaf) {
+            int index = T.indexOfKey(key);
+            if (index != -1) {
+                path.push(new PathNode(T, index));
+                return true; //找到了
+            } else {
+                return false;
+            }
+        }
+        // 不是叶子
+        for (int i = 0; i < T.size; ++i) {
+            if (T.keys[i].overlap(key)) {
+                path.push(new PathNode(T, i));
+                if (searchKey(getRTNode(T.ptrs[i]), key, path)) return true;
+                else path.pop();
+            }
+        }
+        return false;
+    }
+
+    // 重新插入到指定高度
+    private boolean reinsert(Rectangle key, long value, int height) {
+        RBranchRef ref = new RBranchRef();
+        return reinsert(null, -1, getRTNode(root), key, value, ref, height);
+    }
+
+    // 重新递归插入到指定高度(树叶为高度为0)
+    private boolean reinsert(RTNode parent, int pindex, RTNode T, Rectangle key, long value, RBranchRef ref, int height) {
+        int i = T.getInsertPos(key);
+
+        // 向下递归插入
+        if (T.height > height) {
+            boolean insertFlag = reinsert(T, i, getRTNode(T.ptrs[i]), key, value, ref, height);
+            if (!insertFlag) return false; // 数据已经存在, 不需要插入
+        } else {
+            // 卫星数据已存在, 更新
+            if (T.size > 0 && key.equals(T.keys[i])) {
+                T.ptrs[i] = value;
+                return false;
             }
         }
 
+        // 向上调整
+        Rectangle curKey = null;
+        if (T.height == height) {
+            curKey = key;
+            ref.rbranch = value;
+        } else if (ref.rbranch != NIL) {
+            curKey = ref.rmbr;
+        }
+        // 插入
+        if (curKey != null) {
+            if (T.size >= m)
+                insertAndQSplit(T, curKey, ref);
+            else
+                insert(T, curKey, ref);
+        }
+
+        // 更新父亲key结点
+        if (T.pageIndex == root) {
+            // 根结点长高一层
+            if (ref.rbranch != NIL) {
+                RTNode rbt = createRTNode();
+                rbt.isleaf = false;
+                rbt.size = 2;
+                rbt.keys[0] = ref.tmbr;
+                rbt.keys[1] = ref.rmbr;
+                rbt.ptrs[0] = T.pageIndex;
+                rbt.ptrs[1] = ref.rbranch;
+                rbt.height = T.height + 1;
+                root = rbt.pageIndex;
+                mapper.setNewRoot(root); // 设置新的根结点索引
+            }
+        } else {
+            // 更新父亲key结点
+            parent.keys[pindex] = T.getMbr();
+            parent.change = true;
+        }
+        return true;
     }
 }
