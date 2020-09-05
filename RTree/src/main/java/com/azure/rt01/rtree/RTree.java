@@ -2,7 +2,9 @@ package com.azure.rt01.rtree;
 
 import com.azure.rt01.visualization.Draw;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 public class RTree {
     public static final long NIL = -1L;
@@ -49,6 +51,13 @@ public class RTree {
         Draw.init();
         draw(getRTNode(root), 0);
         Draw.done();
+    }
+
+    // 范围查找
+    public List<SearchResult> searchRange(Rectangle range){
+        ArrayList<SearchResult> results = new ArrayList<>();
+        searchRange(getRTNode(root), range, results);
+        return results;
     }
 
     // 打印树结构
@@ -238,6 +247,19 @@ public class RTree {
             if (!T.isleaf) {
                 RTNode t = getRTNode(T.ptrs[i]);
                 draw(t, level + 1);
+            }
+        }
+    }
+
+    // 范围查找（递归）
+    private void searchRange(RTNode T, Rectangle range, List<SearchResult> result){
+        if(T.isleaf){
+            for(int i = 0; i < T.size; ++i){
+                if(T.keys[i].overlap(range)) result.add(new SearchResult(T.keys[i], T.ptrs[i]));
+            }
+        } else {
+            for(int i = 0; i < T.size; ++i){
+                if(T.keys[i].overlap(range)) searchRange(getRTNode(T.ptrs[i]), range, result);
             }
         }
 

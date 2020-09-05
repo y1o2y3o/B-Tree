@@ -27,12 +27,12 @@ public class Rectangle {
 
     // 判断两个rectangle是否相交
     boolean overlap(Rectangle rectangle) {
-        double xmax = MathUtil.max(p2.x, rectangle.p2.x);
-        double ymax = MathUtil.max(p2.y, rectangle.p2.y);
-        double xmin = MathUtil.min(p1.x, rectangle.p1.x);
-        double ymin = MathUtil.min(p1.y, rectangle.p1.y);
-        return ((xmax - xmin) > (getWidth() + rectangle.getWidth()))
-                && ((ymax - ymin) > getHeight() + rectangle.getHeight());
+        double xmax = Double.max(p2.x, rectangle.p2.x);
+        double ymax = Double.max(p2.y, rectangle.p2.y);
+        double xmin = Double.min(p1.x, rectangle.p1.x);
+        double ymin = Double.min(p1.y, rectangle.p1.y);
+        return ((xmax - xmin) < (getWidth() + rectangle.getWidth()))
+                && ((ymax - ymin) < (getHeight() + rectangle.getHeight()));
     }
 
     // 计算矩形面积

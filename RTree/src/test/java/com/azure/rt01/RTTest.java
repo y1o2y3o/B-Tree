@@ -1,8 +1,6 @@
 package com.azure.rt01;
 
-import com.azure.rt01.rtree.FileMapper;
-import com.azure.rt01.rtree.RTNode;
-import com.azure.rt01.rtree.RTree;
+import com.azure.rt01.rtree.*;
 import com.azure.rt01.rtree.Rectangle;
 import com.azure.rt01.visualization.Draw;
 import org.junit.Test;
@@ -13,6 +11,7 @@ import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.util.List;
 
 public class RTTest {
     @Test
@@ -59,7 +58,9 @@ public class RTTest {
         FileMapper mapper = new FileMapper.FileMapperFactory()
                 .load();
         RTree rTree = new RTree(mapper);
-        rTree.draw();
+        List<SearchResult> searchResults = rTree.searchRange(new Rectangle(0, 0, 100, 100));
+        System.out.println(searchResults.size());
+        System.out.println(searchResults);
     }
 
     @Test
@@ -84,4 +85,6 @@ public class RTTest {
         reader.close();
         Draw.done();
     }
+
+
 }
