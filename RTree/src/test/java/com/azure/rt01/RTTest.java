@@ -17,7 +17,7 @@ public class RTTest {
     @Test
     public void test() throws IOException {
         FileMapper mapper = new FileMapper.FileMapperFactory()
-                //.setPageSize(RTNode.pageHeaderCapacity + 40 * 3)
+                .setPageSize(1024*8)
                 .create();
         RTree rTree = new RTree(mapper);
 
