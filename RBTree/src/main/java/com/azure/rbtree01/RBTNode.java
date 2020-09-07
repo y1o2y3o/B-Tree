@@ -4,7 +4,8 @@ public class RBTNode {
     static final int BLACK = 0;
     static final int RED = 1;
     static final RBTNode NULLNODE;
-    static{
+
+    static {
         NULLNODE = new RBTNode();
         NULLNODE.key = Long.MAX_VALUE;
         NULLNODE.color = BLACK;
@@ -16,10 +17,16 @@ public class RBTNode {
     RBTNode right = NULLNODE;
     int color;
 
-    public RBTNode(){}
+    public RBTNode() {
+    }
 
     public RBTNode(long key, int color) {
         this.key = key;
         this.color = color;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%d--%s", key, color == RED ? "RED" : "BLACK");
     }
 }

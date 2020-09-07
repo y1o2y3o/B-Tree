@@ -1,6 +1,7 @@
 package com.azure.rbtree01;
 
-import javax.swing.text.rtf.RTFEditorKit;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Stack;
 
 public class RBTree {
@@ -11,6 +12,70 @@ public class RBTree {
         if (!insertNode(key, path)) return false;
         adjust(path);
         return true;
+    }
+
+    public void printTree() {
+        printTree(root.right, 0);
+    }
+
+    public void printInorder(){
+        printInorder(root.right);
+    }
+
+    public List<Long> keysInorder(){
+        ArrayList<Long> keys = new ArrayList<>();
+        keysInorder(root.right, keys);
+        return keys;
+    }
+
+    public boolean validate(){
+        int blackNum = 0;
+        RBTNode p = root.right;
+        while(p != RBTNode.NULLNODE){
+            if(p.color == RBTNode.BLACK)
+                blackNum++;
+            p = p.left;
+        }
+        return validate(root.right, root, blackNum, 0);
+    }
+
+    private static boolean validate(RBTNode T, RBTNode parent, int blackNum, int curNum){
+        if(parent.color == RBTNode.RED && T.color == RBTNode.RED) return false;
+        if(T == RBTNode.NULLNODE){
+            return curNum == blackNum;
+        }
+        if(T.color == RBTNode.BLACK) curNum++;
+        if(!validate(T.left, T, blackNum, curNum)) return false;
+        return validate(T.right, T, blackNum, curNum);
+    }
+
+    private static void keysInorder(RBTNode T, List<Long> keys){
+        if(T!=RBTNode.NULLNODE){
+            keysInorder(T.left, keys);
+            keys.add(T.key);
+            keysInorder(T.right, keys);
+        }
+    }
+
+    private static void printInorder(RBTNode T){
+        if(T!=RBTNode.NULLNODE){
+            printInorder(T.left);
+            System.out.print(T.key + " ");
+            printInorder(T.right);
+        }
+    }
+
+
+    private static void printTree(RBTNode T, int d) {
+        if (T != RBTNode.NULLNODE) {
+            for (int i = 0; i < d; ++i) {
+                System.out.print("\t");
+            }
+            System.out.print(T + "\n");
+            printTree(T.left, d + 1);
+
+            printTree(T.right, d + 1);
+        }
     }
 
     private static RBTNode singleRotateWithLeft(RBTNode T1) {
