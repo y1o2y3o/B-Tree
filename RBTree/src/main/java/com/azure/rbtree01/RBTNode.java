@@ -27,6 +27,7 @@ public class RBTNode {
 
     @Override
     public String toString() {
+        if(this == NULLNODE) return "NULL--"+(color == RED ? "RED" : "BLACK");
         return String.format("%d--%s", key, color == RED ? "RED" : "BLACK");
     }
 }
