@@ -16,6 +16,7 @@
         <module>BTree</module>
         <module>RTree</module>
         <module>RBTree</module>
+        <module>SpalyTree</module>
     </modules>
     <dependencies>
         <dependency>
